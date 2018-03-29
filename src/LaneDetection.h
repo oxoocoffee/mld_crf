@@ -1,3 +1,5 @@
+#include <opencv2/opencv.hpp>
+
 struct LANE_MARKING {
 	cv::Point2f str_p;
 	cv::Point2f cnt_p;
@@ -38,10 +40,8 @@ class LaneDetection {
 
 public:
 
-	LaneDetection() {
-	}
-	~LaneDetection() {
-	}
+    LaneDetection() = default;
+    ~LaneDetection() = default;
 
 	bool initialize_variable(std::string& img_name);
 	bool initialize_Img(std::string& img_name);
@@ -75,10 +75,10 @@ private:
 	// Image
 	cv::Size img_size;
 	cv::Mat img_gray;
-	int img_height;
-	int img_width;
-	int img_roi_height;
-	int img_depth;
+    int img_height;
+    int img_width;
+    int img_roi_height;
+    int img_depth;
 
 	// Lane marking variable
 	std::vector<int> max_lw;

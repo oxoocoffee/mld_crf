@@ -5,6 +5,7 @@ Due to some subtle changes, the codes doesn't work the same as the original impl
 
 ### Requirement:
  OpenCV 3.1.0
+ cxxopt 2.0.0
  
 ### Reference
 please cite the following paper when you use the source codes.

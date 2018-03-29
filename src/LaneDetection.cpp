@@ -1,9 +1,6 @@
-#pragma warning(disable: 4819)
-#include <opencv2\opencv.hpp>
-#include <stdlib.h>
-#include <time.h>
-#include <math.h>
-
+#include <cstdlib>
+#include <ctime>
+#include <cmath>
 #include "LaneDetection.h"
 
 
@@ -25,10 +22,11 @@
 
 // Initializing variables depending on the resolution of the input image.
 
-double valueAt(std::vector<float>& f, float x) {
-	float ans = 0.f;
+float valueAt(std::vector<float>& f, float x) {
+
+    float ans = 0.0f;
 	for (int i = (int)f.size() - 1; i >= 0; --i)
-		ans = ans * x + f[i];
+        ans = (ans * x) + f[i];
 	return ans;
 }
 
@@ -44,7 +42,7 @@ bool LaneDetection::initialize_variable(std::string& img_name) {
 	img_size = img_src.size();
 	img_height = img_src.rows;
 	img_width = img_src.cols;
-	img_roi_height = (int)(img_size.height*0.5);
+    img_roi_height = (int)(img_size.height * 0.5f);
 	img_depth = img_src.depth();
 
 	max_lw.resize(img_height);
@@ -210,9 +208,10 @@ void LaneDetection::lane_marking_detection(bool verbose) {
 
 	if (verbose) {
 		cv::Mat img_test = cv::Mat(img_size, CV_8UC3);
-		for (int n = 0; n < lm.size(); n++) {
-			cv::line(img_test, lm[n].str_p, lm[n].end_p, CV_RGB(0, 255, 0), 2, 8, 0);
-		}
+
+        for (auto & n : lm)
+            cv::line(img_test, n.str_p, n.end_p, CV_RGB(0, 255, 0), 2, 8, 0);
+
 		cv::imshow("Lane marking detection", img_test);
 	}
 }
@@ -224,9 +223,9 @@ void LaneDetection::seed_generation(bool verbose) {
 	// STEP 1-1. Generating Seeds: Making a bunch of seeds consisting of lane markings near each others.
 	int flag_group = 0;
 	int flag_dist = 0;
-	for (int ii = 0; ii < lm.size(); ii++) {
+    for (int ii = 0; ii < lm.size(); ii++) {
 		flag_group = 0;
-		for (int jj = marking_seed.size() - 1; jj >= 0; jj--) {
+        for (int jj = marking_seed.size() - 1; jj >= 0; jj--) {
 
 			flag_dist = dist_ftn1(ii, marking_seed[jj].index[marking_seed[jj].index.size() - 1], marking_seed[jj].cnt_dir);
 
@@ -271,7 +270,7 @@ void LaneDetection::seed_generation(bool verbose) {
 
 	// STEP 1-2. Seed Validation
 	int count_i, count_j;
-	float var;
+
 	for (int ii = 0; ii < marking_seed.size(); ii++) {
 		count_i = marking_seed[ii].index.size();
 
@@ -305,7 +304,7 @@ void LaneDetection::seed_generation(bool verbose) {
 	std::vector<int> val_seed;
 
 	srand((unsigned)time(NULL));
-	int r, g, b;
+
 	for (int ii = 0; ii < marking_seed.size(); ii++) {
 		if (marking_seed[ii].flag < 0) {
 			continue;
@@ -723,7 +722,7 @@ void LaneDetection::graph_generation(bool verbose) {
 			}
 
 			// STEP 3-3. Pairwise cost calculation
-			int n_of_pts = 0;
+
 			std::vector<cv::Point2f> pts;
 			for (int ii = 0; ii < n_of_grp_seeds; ii++) {
 				if (ele_sum[ii] > 0) {
@@ -781,12 +780,11 @@ void LaneDetection::graph_generation(bool verbose) {
 			// Exception # 2
 			expt_flag = 0;
 			for (int ii = 0; ii<node_grp[nn].idx.size(); ii++) {
-				if (nodes[node_grp[nn].idx[ii]].unary > 0.5) {
+                if (nodes[node_grp[nn].idx[ii]].unary > 0.5)
 					break;
-				}
-				if (ii == node_grp[nn].idx.size() - 1) {
+
+                if (ii == node_grp[nn].idx.size() - 1)
 					expt_flag = 1;
-				}
 			}
 			if (expt_flag == 1) {
 				continue;
@@ -957,6 +955,8 @@ void LaneDetection::graph_generation(bool verbose) {
 
 void LaneDetection::validating_final_seeds(bool verbose) {
 
+    (void)verbose;
+
 	cv::Mat img_test_val = cv::Mat(img_size, CV_8UC3);
 	
 	for (int ii = 0; ii < marking_seed.size(); ii++) {
@@ -994,7 +994,6 @@ void LaneDetection::validating_final_seeds(bool verbose) {
 			cv::line(img_test_val, lm[temp_i].str_p, lm[temp_i].end_p, cv::Scalar(b, g, r), 2, 8, 0);
 		}
 
-
 		// polynomial fitting
 		std::vector<cv::Point2f> pts;
 		std::vector<float> coeff(3);
@@ -1021,16 +1020,12 @@ void LaneDetection::validating_final_seeds(bool verbose) {
 
 float LaneDetection::marking_thres(float input) {
 
-	float thres = 0;
+//    if(input < 50)
+//        return (int)(input/10);
+//	else
+//        return (int)(15+input/200*10);
 
-	/*if(input<50){
-	thres = (int)(input/10);
-	}else{
-	thres = (int)(15+input/200*10);
-	}*/
-	//return thres;
-
-	return input / 10 + 4;
+    return (input / 10.0f) + 4.0f;
 }
 int LaneDetection::dist_ftn1(int s_i, int s_j, double slope) {
 
@@ -1073,18 +1068,18 @@ int LaneDetection::dist_ftn1(int s_i, int s_j, double slope) {
 float LaneDetection::dist_ftn2(int i, int j) {
 
 	// For Low level Association
-	if (marking_seed[i].end_p.y > marking_seed[j].str_p.y) {
-		return 0;
-	}
+    if (marking_seed[i].end_p.y > marking_seed[j].str_p.y)
+        return 0.0f;
 
 	// Rough Verification
 	std::vector<float> slp;
 	slp.resize(7);
 	slp[0] = marking_seed[i].cnt_dir;
 	slp[1] = marking_seed[j].cnt_dir;
-	if ((abs(slp[0] - slp[1])>0.5) && (abs(abs(slp[0] - slp[1]) - 3.141592) < 2.641592)) {
-		return 0;
-	}
+
+    if ((abs(slp[0] - slp[1])>0.5) && (abs(abs(slp[0] - slp[1]) - 3.141592f) < 2.641592f))
+        return 0.0f;
+
 	slp[2] = slope_ftn(marking_seed[i].cnt_p, marking_seed[j].cnt_p);
 	slp[3] = slope_ftn(marking_seed[i].str_p, marking_seed[j].str_p);
 	slp[4] = slope_ftn(marking_seed[i].str_p, marking_seed[j].end_p);
@@ -1094,13 +1089,14 @@ float LaneDetection::dist_ftn2(int i, int j) {
 	// slope variance check
 	float slp_mean = (slp[0] + slp[1] + slp[2] + slp[3] + slp[4] + slp[5] + slp[6]) / 7;
 	float temp = 0;
-	for (int i = 0; i < 7; i++) {
+
+    for (int i = 0; i < 7; i++)
 		temp += (slp[i] - slp_mean)*(slp[i] - slp_mean);
-	}
-	float slp_var = temp / 7;
-	if (slp_var > 0.5) {
-		return 0;
-	}
+
+    float slp_var = temp / 7.0f;
+
+    if (slp_var > 0.5f)
+        return 0.0f;
 
 	// distance ftn between two seeds	
 	float sig = 0.25;
@@ -1108,15 +1104,14 @@ float LaneDetection::dist_ftn2(int i, int j) {
 	diff1 = slp[0] - slp[2];
 	diff2 = slp[1] - slp[2];
 	// it should be that 1 < 3 < 2 or 2 < 3 < 1
-	if (((abs(diff1) + abs(diff2)) > 0.2) && (diff1*diff2 > 0)) {
+    if (((abs(diff1) + abs(diff2)) > 0.2f) && (diff1*diff2 > 0)) {
 		return 0;
 	}
-	if (abs(diff1) > 1.570796) {
-		diff1 = abs(diff1 - 3.141592);
-	}
-	if (abs(diff2) > 1.570796) {
-		diff2 = abs(diff2 - 3.141592);
-	}
+    if (abs(diff1) > 1.570796f)
+        diff1 = abs(diff1 - 3.141592f);
+
+    if (abs(diff2) > 1.570796f)
+        diff2 = abs(diff2 - 3.141592f);
 
 	return (float)(exp(-(diff1)*(diff1) / sig*sig) + exp(-(diff2)*(diff2) / sig*sig));
 }
@@ -1124,12 +1119,14 @@ float LaneDetection::dist_ftn2(int i, int j) {
 
 int LaneDetection::dist_ftn3(int i, int j, int s_i, int s_j) {
 
+    (void)s_i;
+    (void)s_j;
+
 	// Graph Validity of (i to j)
 
 	// Location 1
-	if (marking_seed[i].end_p.y >= marking_seed[j].str_p.y) {
-		return 0;
-	}
+    if (marking_seed[i].end_p.y >= marking_seed[j].str_p.y)
+        return 0;
 
 	//printf(" >> Node [%d] -> [%d]\n",s_i,s_j);
 
@@ -1139,7 +1136,7 @@ int LaneDetection::dist_ftn3(int i, int j, int s_i, int s_j) {
 	//printf("  >> location diff = \t%.3f\t%.3f\t  %.3f\n", abs(diff1), abs(diff2), abs(diff1)+abs(diff2));
 	if (abs(diff1) + abs(diff2) > 65) {
 		//printf("  >> location diff [%d] -> [%d] = %.3f\t%.3f\t  %.3f\n", s_i,s_j, abs(diff1), abs(diff2), abs(diff1)+abs(diff2));
-		return 0;
+        return 0;
 	}
 
 	// Slope
@@ -1149,7 +1146,7 @@ int LaneDetection::dist_ftn3(int i, int j, int s_i, int s_j) {
 	//printf("  >> slope diff = \t%.3f\t%.3f\t%.3f\t\t%.3f\t%.3f\t%.3f\n", abs(diff3), abs(diff4), abs(diff3)+abs(diff4), inter_dir/CV_PI*180, marking_seed[i].end_dir/CV_PI*180, marking_seed[j].str_dir/CV_PI*180);
 	if (abs(diff3) + abs(diff4) > 80) {
 		//printf("  >> slope diff [%d] -> [%d] = %.3f\t%.3f\t  %.3f\t\t%.3f\t%.3f\t%.3f\n", s_i,s_j, abs(diff3), abs(diff4), abs(diff3)+abs(diff4), inter_dir/CV_PI*180, marking_seed[i].end_dir/CV_PI*180, marking_seed[j].str_dir/CV_PI*180);
-		return 0;
+        return 0;
 	}
 
 	//printf(" >> [%d] -> [%d] \n", s_i,s_j);
@@ -1243,7 +1240,6 @@ void LaneDetection::node_grouping(cv::Mat& mat_in, int size, int type, int n, in
 		}
 	}
 }
-
 
 float LaneDetection::poly2(std::vector<cv::Point2f> points, int n, std::vector<float>& coeff) {
 

@@ -1,2 +1,5 @@
 src/mld_crf.zip
 bld/
+# Qt Creator files
+*.user
+*.autosave
